@@ -1,0 +1,19 @@
+RESUMO DIÁRIO DE TRIAGEM — 2026-08-11
+==================================================
+Total de mensagens processadas: 10
+
+Por categoria:
+  - Urgente / Prazo: 2
+  - Dúvida sobre processo: 2
+  - Agendamento: 2
+  - Financeiro: 1
+  - Documento recebido: 2
+  - Spam / Irrelevante: 1
+
+URGENTES / COM PRAZO (2) — mais próximas primeiro:
+  [prazo não identificado — CONFERIR] Carlos Pereira | processo 0011456-78.2025.5.03.0132 — Bom dia. Recebi uma intimação dizendo que tenho até 15/08/2026 para me manifesta (canal: email, de: carlos.pereira@uol.com.br)
+  [prazo não identificado — CONFERIR] (remetente não identificado como cliente) | processo 0009988-11.2023.5.03.0069 — Dr., conforme conversado, proponho acordo no processo 0009988-11.2023.5.03.0069  (canal: email, de: adv.contrario@escritorioxyz.com.br)
+
+⚠ MENSAGENS PARA REVISÃO MANUAL (2):
+  - #4 (urgente_prazo): nome_cliente preenchido via base de clientes conhecidos (remetente já cadastrado).; Classificada como urgente_prazo mas sem data_prazo extraída; conferir manualmente.
+  - #9 (urgente_prazo): Classificada como urgente_prazo mas sem data_prazo extraída; conferir manualmente.

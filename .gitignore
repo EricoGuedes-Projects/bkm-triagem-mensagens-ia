@@ -1,0 +1,10 @@
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+data/output/*.db
+.venv/
+venv/
+
+# results.json e resumo_diario.txt em data/output/ são commitados de
+# propósito como evidência do resultado gerado (exigido nos entregáveis).

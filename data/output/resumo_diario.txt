@@ -1,0 +1,16 @@
+RESUMO DIÁRIO DE TRIAGEM — 2026-08-12
+==================================================
+Total de mensagens processadas: 10
+
+Por categoria:
+  - Urgente / Prazo: 3
+  - Dúvida sobre processo: 1
+  - Agendamento: 2
+  - Financeiro: 1
+  - Documento recebido: 2
+  - Spam / Irrelevante: 1
+
+URGENTES / COM PRAZO (3) — mais próximas primeiro:
+  [2026-08-08] (remetente não identificado como cliente) | processo 0009988-11.2023.5.03.0069 — Proposta de acordo no valor de R$ 45.000 com prazo para resposta até 08/08/2026. (canal: email, de: adv.contrario@escritorioxyz.com.br)
+  [2026-08-15] Maria Aparecida | processo 0010702-33.2024.5.03.0069 — Maria Aparecida está preocupada com a audiência marcada para a próxima semana do seu processo. (canal: whatsapp, de: +5527999990001)
+  [2026-08-15] Carlos | processo 0011456-78.2025.5.03.0132 — Carlos recebeu uma intimação com prazo até 15/08/2026 para se manifestar no processo. (canal: email, de: carlos.pereira@uol.com.br)
