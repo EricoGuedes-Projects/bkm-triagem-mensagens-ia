@@ -7,6 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 import classifier
 
+# Mensagem de basica para teste
 MENSAGEM_BASE = {
     "id": 1,
     "canal": "whatsapp",
@@ -15,7 +16,9 @@ MENSAGEM_BASE = {
     "texto": "Oi, sou a Maria Aparecida, meu processo 0010702-33.2024.5.03.0069 teve audiencia marcada?",
 }
 
-
+"""
+Define a resposta da LLM para a mensagem de teste
+"""
 def _resp(categoria: str, **kwargs) -> str:
     base = {
         "categoria": categoria,
@@ -27,7 +30,11 @@ def _resp(categoria: str, **kwargs) -> str:
     base.update(kwargs)
     return json.dumps(base)
 
-
+"""
+Testa a classificação quando as duas chamadas da LLM retornam a mesma categoria.
+Verifica que a dupla checagem é considerada concordante e que a arbitragem e
+a revisão manual por divergência não são acionadas.
+"""
 def test_classificacao_com_concordancia():
     # As duas chamadas (temperature 0.0 e 0.4) concordam -> não deve
     # disparar arbitragem nem marcar para revisão manual por divergência.
@@ -39,7 +46,11 @@ def test_classificacao_com_concordancia():
     assert resultado["revisar_manualmente"] is False
     assert resultado["numero_processo"] == "0010702-33.2024.5.03.0069"
 
-
+"""
+Testa o cenário de divergência entre as duas classificações independentes da LLM.
+Verifica que a função de arbitragem é acionada e que sua decisão é utilizada
+como categoria final, registrando a ocorrência nas observações.
+"""
 def test_divergencia_aciona_arbitragem():
     respostas = [
         _resp("duvida_processo"),  # chamada temperature=0.0
@@ -54,7 +65,11 @@ def test_divergencia_aciona_arbitragem():
     assert resultado["concordancia_dupla_checagem"] is False
     assert any("arbitragem" in obs for obs in resultado["observacoes"])
 
-
+"""
+Testa a validação do número de processo retornado pela LLM.
+Verifica que um número de processo inexistente no texto original é considerado
+uma alucinação e, portanto, descartado do resultado final.
+"""
 def test_numero_processo_alucinado_e_descartado():
     # LLM "inventa" um número de processo que não está no texto original.
     resp_alucinada = _resp("duvida_processo", numero_processo="9999999-99.2099.5.03.9999")
@@ -64,7 +79,11 @@ def test_numero_processo_alucinado_e_descartado():
     assert resultado["numero_processo"] is None
     assert any("não aparece literalmente no texto" in obs for obs in resultado["observacoes"])
 
-
+"""
+Testa o enriquecimento dos dados a partir de um cliente previamente cadastrado.
+Verifica que o cliente é identificado pelo telefone e que seu nome e número
+de processo são incorporados ao resultado quando não fornecidos pela LLM.
+"""
 def test_enriquecimento_por_cliente_conhecido():
     mensagem_sem_nome = dict(MENSAGEM_BASE)
     mensagem_sem_nome["texto"] = "o dr me pediu o laudo do inss, ta aqui a foto"

@@ -32,9 +32,11 @@ Categoria = Literal[
     "spam_irrelevante",
 ]
 
-
+"""
+Classe que representa o formato exato esperado da resposta da LLM da chamada de classificação 
+para a mensagem que sera usada para extração
+"""
 class ExtracaoLLM(BaseModel):
-    """Formato exato que exigimos do LLM em cada chamada de classificação."""
 
     categoria: Categoria
     nome_cliente: Optional[str] = None
@@ -51,9 +53,7 @@ class ExtracaoLLM(BaseModel):
 
         # formato CNJ: NNNNNNN-DD.AAAA.J.TR.OOOO
         if not re.fullmatch(r"\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}", v.strip()):
-            # Não derrubamos o pipeline por isso: marcamos como suspeito e
-            # deixamos o validators.py decidir se descarta (possível alucinação
-            # de formato) em vez de estourar uma exceção de parsing aqui.
+            # Não derrubamos o pipeline por isso: marcamos como suspeito e deixamos o validators.py decidir se descarta (possível alucinação de formato) em vez de estourar uma exceção de parsing aqui.
             return v.strip()
         return v.strip()
 
@@ -70,10 +70,11 @@ class ExtracaoLLM(BaseModel):
             ) from exc
         return v
 
-
+"""
+Classe que representa o registro final no banco de dados já com metadados
+da dupla checagem e das validações anti-alucinação.
+"""
 class MensagemProcessada(BaseModel):
-    """Registro final gravado no banco / no JSON de saída, já com metadados
-    da dupla checagem e das validações anti-alucinação."""
 
     id: int
     canal: str

@@ -1,6 +1,6 @@
-# Triagem inteligente de mensagens de clientes — BKM Advogados
+# Triagem inteligente de mensagens de clientes 
 
-Teste técnico: Vaga A (Analista de Automação e IA). Pipeline em Python puro que lê
+Pipeline em Python puro que lê
 mensagens desestruturadas (WhatsApp/e-mail), classifica com um LLM (com dupla
 checagem), extrai campos estruturados, grava em SQLite e gera um resumo diário
 em texto.
@@ -10,16 +10,14 @@ em texto.
 ```bash
 git clone <este-repositorio>
 cd teste-automacao-ia
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+python -m venv .venv  
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-
-cp .env.example .env
-# edite .env e cole sua ANTHROPIC_API_KEY (console.anthropic.com)
 
 python src/main.py
 ```
 
-Isso lê `data/input/messages.json` (a massa de teste do enunciado), processa cada
+Recebendo o input de `data/input/messages.json` , processa cada
 mensagem, e gera:
 
 - `data/output/results.json` — todas as mensagens processadas, com categoria,
@@ -30,8 +28,8 @@ mensagem, e gera:
 - `data/output/triagem.db` — SQLite com todo o histórico processado.
 
 Rodar de novo com o mesmo arquivo de entrada **não duplica** nada (deduplicação
-por hash de remetente+texto) e o `results.json`/resumo sempre refletem o
-histórico acumulado no banco, não só a execução atual.
+por hash de remetente+texto) e o `results.json`/resumo sempre 
+refletem as mensagens processadas no dia, não só a execução atual.
 
 Para simular um novo lote de mensagens chegando, basta apontar para outro
 arquivo no mesmo formato:
@@ -46,22 +44,10 @@ python src/main.py --input data/input/outro_lote.json
 pytest tests/ -v
 ```
 
-Os testes usam mocks do LLM (não fazem chamadas reais de API), cobrindo:
+Os testes usam mocks do LLM (usando uma reposta de teste basica), cobrindo:
 validação de formato CNJ, deduplicação, descarte de número de processo
 "alucinado" (que não existe no texto original), e a lógica de arbitragem
 quando as duas chamadas do LLM divergem.
-
-### Rodando sem API key (modo demo offline)
-
-Se `ANTHROPIC_API_KEY` não estiver no `.env`, o pipeline roda em `MOCK_MODE`:
-usa uma heurística simplificada só para provar que a arquitetura funciona
-ponta a ponta sem travar quem for rodar o projeto sem custo de API. **Isso não
-representa a qualidade da classificação real** — o enunciado proíbe
-classificar por regex/palavra-chave, e é exatamente isso que o modo mock faz
-como fallback de última instância. Os arquivos `data/output/*_exemplo_mock_mode.*`
-neste repositório foram gerados assim, só como evidência de que o pipeline
-roda de ponta a ponta; para avaliar a classificação de verdade, rode com uma
-chave real.
 
 ## Arquitetura
 
@@ -97,15 +83,14 @@ data/input/messages.json (ou webhook/pasta monitorada)
         (todo o histórico)  ──► data/output/results.json
 ```
 
-O "recebimento" é simulado por leitura de arquivo (`data/input/messages.json`),
-como o enunciado permite. Trocar isso por um canal real depois é troca
-isolada: um endpoint FastAPI recebendo o payload do WhatsApp/e-mail chamaria
-`classificar_mensagem()` e `database.salvar()` exatamente como `main.py` faz —
-nada no núcleo do pipeline (classifier/validators/database/report) muda.
+O "recebimento" é simulado por leitura de arquivo (`data/input/messages.json`), 
+de forma a simular uma entrada de dados por fonte externa.
+De forma a facilitar uma troca para uma API externa para input de dados
+caso necessario.
 
 ## Por que essas ferramentas
 
-- **Python puro, sem n8n/Make.** Para uma tarefa com lógica não-trivial de
+- **Código puramente em Python.** Para uma tarefa com lógica não-trivial de
   validação, dupla checagem e anti-alucinação, código puro dá controle fino
   sobre cada etapa (retry, comparação de duas respostas, arbitragem) que em
   uma ferramenta de orquestração visual vira caixa-preta difícil de testar
@@ -115,22 +100,22 @@ nada no núcleo do pipeline (classifier/validators/database/report) muda.
 - **Anthropic API (Claude) como LLM.** Boa relação custo/qualidade para
   extração estruturada e segue instruções de formato de saída de forma
   consistente. A camada `llm.py` isola isso: trocar de provedor é reescrever
-  uma função, o resto do pipeline não muda.
-- **SQLite em vez de Postgres/Sheets.** Para ~500 msgs/dia, um arquivo único
+  uma função, o resto do pipeline não muda, o que é demostrado pela 
+  opção de Utilizar Openai apenas mudando a chamada da API e a função chamar_llm.
+- **SQLite como banco de dados.** Para ~500 msgs/dia, um arquivo único
   sem servidor é suficiente, zero infraestrutura para rodar o teste, e ainda
   assim dá histórico consultável via SQL. Migração para Postgres é natural
-  quando o uso crescer (ver "o que faria diferente").
+  quando o uso crescer, podendo ser utilizado facilmente com o uso de docker.
 - **Pydantic para validar a saída do LLM.** Garante que "categoria" é sempre
   uma das 6 permitidas e que "data_prazo" é sempre uma data válida ou `null`
   — se o LLM fugir do formato, isso vira um retry automático em vez de um
   dado sujo entrando no banco.
 
-## Como a dupla checagem funciona (e por quê)
+## Como a dupla checagem funciona
 
-O enunciado proíbe classificar só por regex/palavra-chave e pede tratamento de
-erro e de alucinação. A solução:
+De modo a tentar evitar a alucinação sem utilizar classificação por palavras chaves. A solução:
 
-1. Cada mensagem é classificada **duas vezes** (temperatures diferentes).
+1. Cada mensagem é classificada **duas vezes** (temperatures diferentes, de modo a utilizar a randomização de escolhas de palavras da LLM).
 2. Se as duas concordam na categoria, aceita com confiança alta.
 3. Se divergem, uma **terceira chamada de arbitragem** mostra ao LLM as duas
    respostas conflitantes e pede para decidir revendo o texto original.
@@ -141,11 +126,11 @@ erro e de alucinação. A solução:
    não no LLM) — isso pega alucinação mesmo quando as duas chamadas
    concordam entre si (concordância não é o mesmo que estar certo).
 
-O caso do item 9 da massa de teste (mensagem do advogado da parte contrária,
-com prazo, deve ser `urgente_prazo`) é coberto pela regra 6 do prompt e testado
+Para casos em que temos exemplos especiais da massa de teste (mensagem do advogado da parte contrária,
+com prazo, deve ser `urgente_prazo`) é coberto por regras especificas do prompt e testado
 manualmente na massa fornecida.
 
-## O que faria diferente com mais tempo
+## Melhorias Futuras ou Implementações para maior scala
 
 - **Cache de prompt** (system prompt é idêntico em toda chamada) para reduzir
   custo — a Anthropic API cobra ~10% do preço normal em tokens de cache hit.

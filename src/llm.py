@@ -1,17 +1,3 @@
-"""
-Camada de acesso ao LLM.
-
-Usamos a API da Anthropic (Claude) por padrão. Trocar de provedor é
-questão de reimplementar `chamar_llm()` — o resto do pipeline não sabe
-nem se importa qual LLM está por trás, porque a interface é
-"prompt in -> string JSON out".
-
-Se ANTHROPIC_API_KEY não estiver configurada, cai em MOCK_MODE: gera uma
-resposta determinística e simplificada só para permitir rodar o pipeline
-ponta a ponta offline (dev/demo). MOCK_MODE nunca deve ser usado para
-avaliar qualidade de classificação — ele existe apenas para não travar
-quem for rodar o projeto sem uma chave de API à mão.
-"""
 from __future__ import annotations
 
 import json
@@ -69,7 +55,9 @@ Formato de saída (APENAS este JSON, sem texto antes ou depois, sem markdown):
   "resumo": "<uma frase>"
 }"""
 
-
+"""
+Função responsável por construir o prompt a ser enviado à LLM a partir do conteúdo da mensagem de entrada.
+"""
 def _montar_prompt_usuario(mensagem: dict) -> str:
     return (
         f"Canal: {mensagem['canal']}\n"
@@ -83,13 +71,16 @@ def _montar_prompt_usuario(mensagem: dict) -> str:
         "contrário, retorne null em vez de adivinhar."
     )
 
-
+"""
+Função responsável por gerenciar a comunicação principal com a LLM,
+realizando a chamada ao modelo e retornando a resposta no formato
+JSON bruto. A validação e a estruturação do conteúdo são realizadas
+posteriormente pelo módulo classifier.py.
+"""
 # @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=8))
 # def chamar_llm(mensagem: dict, temperature: float = 0.0) -> str:
-#     """Faz UMA chamada ao LLM e devolve a string JSON crua (ainda não
-#     validada com Pydantic — isso é feito em classifier.py)."""
 #     if MOCK_MODE:
-#         return _mock_resposta(mensagem)
+#         return _mock_resposta(mensagem) # Chamado do resposta para o modo offiline quando não a comunicação com a API da LLM
 
 #     import anthropic
 
@@ -104,6 +95,9 @@ def _montar_prompt_usuario(mensagem: dict) -> str:
 #     texto = "".join(b.text for b in resp.content if b.type == "text")
 #     return texto
 
+"""
+Função de chamar llm para o openai
+"""
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=8))
 def chamar_llm(mensagem: dict, temperature: float = 0.0) -> str:
     from openai import OpenAI
@@ -126,6 +120,10 @@ def chamar_llm(mensagem: dict, temperature: float = 0.0) -> str:
     return resp.choices[0].message.content or ""
 
 
+"""
+Função responsável por remover cabeçalhos e rodapés indevidamente adicionados pela LLM 
+à resposta em formato JSON, garantindo que o conteúdo permaneça compatível com o processamento posterior.
+"""
 def extrair_json(texto_bruto: str) -> dict:
     """O LLM às vezes cerca o JSON com ```json ... ``` mesmo quando pedimos
     para não fazer isso. Isso limpa esses casos antes do json.loads()."""
@@ -134,11 +132,13 @@ def extrair_json(texto_bruto: str) -> dict:
     limpo = re.sub(r"```$", "", limpo).strip()
     return json.loads(limpo)
 
-
+"""
+Função auxiliar responsável por fornecer uma resposta simulada quando a comunicação com a API 
+da LLM não está disponível ou quando é necessário executar e validar o pipeline sem realizar chamadas ao modelo. 
+A implementação utiliza dados simulados exclusivamente para testes de infraestrutura e execução ponta a ponta, 
+não representando as regras de negócio reais do sistema.
+"""
 def _mock_resposta(mensagem: dict) -> str:
-    """Modo offline/demo (sem API key). NÃO usa regras de negócio reais —
-    apenas garante que o pipeline roda ponta a ponta para fins de teste
-    de infraestrutura. Ver aviso no README."""
     texto = mensagem["texto"].lower()
     if "promo" in texto or "consorcio" in texto or "consórcio" in texto:
         cat = "spam_irrelevante"

@@ -1,4 +1,3 @@
-"""Gera o resumo diário em texto puro a partir dos registros processados."""
 from __future__ import annotations
 
 from collections import Counter
@@ -15,7 +14,9 @@ NOMES_CATEGORIA = {
     "spam_irrelevante": "Spam / Irrelevante",
 }
 
-
+"""
+Função que gera o relaório com as mensagens por catedoria e mostra as mensagens urgentes ou que precisam de revisão manual
+"""
 def gerar_resumo(registros: list[dict], data_referencia: str | None = None) -> str:
     data_referencia = data_referencia or date.today().isoformat()
     contagem = Counter(r["categoria"] for r in registros)
